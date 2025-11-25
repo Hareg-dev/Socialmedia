@@ -1,0 +1,40 @@
+meta {
+  name: Create Comment
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/comments/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "content": "This is my first comment on the post!"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setEnvVar("commentId", res.getBody().id);
+  }
+}
+
+tests {
+  test("Status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("Response has comment data", function() {
+    expect(res.getBody()).to.have.property('id');
+    expect(res.getBody()).to.have.property('content');
+    expect(res.getBody()).to.have.property('post_id');
+    expect(res.getBody()).to.have.property('user_id');
+  });
+}

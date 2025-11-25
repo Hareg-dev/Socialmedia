@@ -1,0 +1,25 @@
+meta {
+  name: Get Posts
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/posts/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response has data", function() {
+    expect(res.getBody()).to.have.property('data');
+  });
+}
