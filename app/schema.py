@@ -1,7 +1,7 @@
-from pydantic import EmailStr, BaseModel
+from pydantic import EmailStr, BaseModel, conint
 from typing import Optional
 from datetime import datetime
-from pydantic import conint
+
 
 # User schemas
 class UserBase(BaseModel):
