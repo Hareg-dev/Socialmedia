@@ -2,19 +2,24 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.exc import OperationalError 
 from .config import Settings
+import os
 
 settings = Settings()
 
-host = settings.host
-user = settings.database_username
-password = settings.database_password
-port = settings.port
-database_name = settings.database_name
-
-POSTGRES_URL = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database_name}"
+POSTGRES_URL = settings.DATABASE_URL
 
 def create_database_if_not_exists():
+    if os.getenv("DATABASE_URL"):
+        print("Running on Heroku, skipping database creation")
+        return
+    
     try:
+        host = settings.host
+        user = settings.database_username
+        password = settings.database_password
+        port = settings.port
+        database_name = settings.database_name
+        
         temp_engine = create_engine(f"postgresql+psycopg2://{user}:{password}@{host}:{port}/postgres")
         with temp_engine.connect() as conn:
             conn.execution_options(isolation_level="AUTOCOMMIT")
