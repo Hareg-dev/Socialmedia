@@ -1,14 +1,43 @@
-from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
+from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter, UploadFile, File
 from sqlalchemy.orm import Session
 from .. import oauth2
 from .. import models, schema
 from typing import Optional, List
 from ..db import engine, SessionLocal, Base, get_db
 from sqlalchemy import func
+import os
+import shutil
+import time
+from pathlib import Path
 
 router= APIRouter(
     prefix= "/posts"
 )
+
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+ALLOWED_VIDEO_TYPES = {"video/mp4", "video/mpeg", "video/quicktime"}
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+
+@router.post("/upload", status_code=status.HTTP_201_CREATED)
+async def upload_media(
+    file: UploadFile = File(...),
+    current_user: int = Depends(oauth2.get_current_user)
+):
+    if file.content_type not in ALLOWED_IMAGE_TYPES and file.content_type not in ALLOWED_VIDEO_TYPES:
+        raise HTTPException(status_code=400, detail="Invalid file type. Only images and videos allowed")
+    
+    file_ext = file.filename.split(".")[-1]
+    file_name = f"{current_user.id}_{int(time.time() * 1000)}.{file_ext}"
+    file_path = UPLOAD_DIR / file_name
+    
+    with file_path.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    media_type = "image" if file.content_type in ALLOWED_IMAGE_TYPES else "video"
+    return {"media_url": f"/uploads/{file_name}", "media_type": media_type}
 
 @router.post("/", response_model=schema.PostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(post: schema.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):

@@ -1,12 +1,18 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from .db import engine, Base, create_database_if_not_exists
 from app.routers import posts, users, comments, votes
 from . import auth
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 
 origins = ["https://www.google.com"]
 
 app = FastAPI()
+
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

@@ -24,6 +24,8 @@ class Post(Base):
     title = Column(String, nullable=True)
     content = Column(String, nullable=False)
     published = Column(Boolean, default=True)
+    media_url = Column(String, nullable=True)
+    media_type = Column(String, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
 
     author = relationship("User", back_populates="posts")

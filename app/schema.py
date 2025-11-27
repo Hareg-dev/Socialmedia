@@ -32,6 +32,8 @@ class PostBase(BaseModel):
     title: str
     content: str
     published: bool = True
+    media_url: Optional[str] = None
+    media_type: Optional[str] = None
 
 class PostCreate(PostBase):
     pass
@@ -41,6 +43,8 @@ class PostResponse(BaseModel):
     title: str
     content: str
     published: bool
+    media_url: Optional[str] = None
+    media_type: Optional[str] = None
     author: UserResponse
     created_at: Optional[datetime] = None
     
