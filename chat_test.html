@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        input, button { padding: 8px; margin: 5px 0; }
+        input { width: 300px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
+        .message { padding: 5px; margin: 5px 0; background: #f0f0f0; border-radius: 5px; }
+        .my-message { background: #d4edff; text-align: right; }
+    </style>
+</head>
+<body>
+    <h1>Chat Test</h1>
+    
+    <div class="section">
+        <h3>1. Login</h3>
+        <input type="email" id="email" placeholder="Email" value="alice@example.com">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button onclick="login()">Login</button>
+        <div id="loginStatus"></div>
+    </div>
+
+    <div class="section">
+        <h3>2. Chat</h3>
+        <input type="number" id="receiverId" placeholder="Receiver User ID" value="2">
+        <input type="text" id="messageContent" placeholder="Type message...">
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="loadMessages()">Refresh</button>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        let token = '';
+        let myUserId = '';
+        let ws = null;
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('http://localhost:8000/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                
+                const data = await response.json();
+                token = data.access_token;
+                
+                // Get current user info
+                const userResponse = await fetch('http://localhost:8000/users/me', {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const userData = await userResponse.json();
+                myUserId = userData.id;
+                
+                document.getElementById('loginStatus').innerHTML = 
+                    `✅ Logged in as ${userData.name} (ID: ${myUserId})`;
+                
+                // Connect WebSocket
+                connectWebSocket();
+            } catch (error) {
+                document.getElementById('loginStatus').innerHTML = '❌ Login failed';
+            }
+        }
+
+        function connectWebSocket() {
+            ws = new WebSocket(`ws://localhost:8000/messages/ws/${myUserId}`);
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'new_message') {
+                    displayMessage(data.message, false);
+                }
+            };
+        }
+
+        async function sendMessage() {
+            const receiverId = document.getElementById('receiverId').value;
+            const content = document.getElementById('messageContent').value;
+            
+            if (!content) return;
+            
+            try {
+                const response = await fetch('http://localhost:8000/messages/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({receiver_id: parseInt(receiverId), content})
+                });
+                
+                const message = await response.json();
+                displayMessage(message, true);
+                document.getElementById('messageContent').value = '';
+            } catch (error) {
+                alert('Failed to send message');
+            }
+        }
+
+        async function loadMessages() {
+            const receiverId = document.getElementById('receiverId').value;
+            
+            try {
+                const response = await fetch(`http://localhost:8000/messages/?user_id=${receiverId}`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                
+                const messages = await response.json();
+                document.getElementById('messages').innerHTML = '';
+                messages.forEach(msg => {
+                    displayMessage(msg, msg.sender_id == myUserId);
+                });
+            } catch (error) {
+                alert('Failed to load messages');
+            }
+        }
+
+        function displayMessage(msg, isMine) {
+            const messagesDiv = document.getElementById('messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = isMine ? 'message my-message' : 'message';
+            msgDiv.innerHTML = `<strong>${isMine ? 'You' : 'User ' + msg.sender_id}:</strong> ${msg.content}`;
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>

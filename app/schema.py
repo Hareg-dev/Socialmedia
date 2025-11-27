@@ -88,3 +88,19 @@ class Vote(BaseModel):
     post_id: int
     dir: conint(le=1)
 
+# Message schemas
+class MessageCreate(BaseModel):
+    receiver_id: int
+    content: str
+
+class MessageResponse(BaseModel):
+    id: int
+    sender_id: int
+    receiver_id: int
+    content: str
+    is_read: bool
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True
+    }

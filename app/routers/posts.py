@@ -7,7 +7,6 @@ from ..db import engine, SessionLocal, Base, get_db
 from sqlalchemy import func
 import os
 import shutil
-import time
 from pathlib import Path
 
 router= APIRouter(
@@ -30,7 +29,7 @@ async def upload_media(
         raise HTTPException(status_code=400, detail="Invalid file type. Only images and videos allowed")
     
     file_ext = file.filename.split(".")[-1]
-    file_name = f"{current_user.id}_{int(time.time() * 1000)}.{file_ext}"
+    file_name = f"{current_user.id}_{int(os.times().elapsed * 1000)}.{file_ext}"
     file_path = UPLOAD_DIR / file_name
     
     with file_path.open("wb") as buffer:

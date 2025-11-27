@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from .db import engine, Base, create_database_if_not_exists
-from app.routers import posts, users, comments, votes
+from app.routers import posts, users, comments, votes, messages
 from . import auth
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
-origins = ["https://www.google.com"]
+origins = ["*"]  # Allow all origins for development
 
 app = FastAPI()
 
@@ -30,6 +30,7 @@ app.include_router(posts.router)
 app.include_router(comments.router)
 app.include_router(auth.router)
 app.include_router(votes.router)
+app.include_router(messages.router)
 
 
 
